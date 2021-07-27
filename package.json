@@ -1,0 +1,19 @@
+{
+  "name": "fjord-server",
+  "version": "1.0.0",
+  "description": "A SSE-based API proxy for Kafka",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "GoMates",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "redis": "^3.1.2"
+  }
+}
