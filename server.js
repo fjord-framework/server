@@ -3,7 +3,11 @@ const cors = require('cors');
 const redis = require('redis');
 require ('dotenv').config();
 const app = express();
-const jwt = require('jsonwebtoken');
+
+const Registration = require('./lib/registration');
+const NotificationHandler = require('./lib/notification');
+const ClientManager = require('./lib/clientManager');
+const Client = require('./lib/client');
 
 app.use(cors());
 app.use(express.json());
@@ -11,18 +15,12 @@ app.use(express.urlencoded({extended: false}));
 
 const {PORT, REDIS_PORT, REDIS_HOST, JWT_KEY, SEC_PER_PULSE} = process.env;
 
-const clients = {};
+const clients = new ClientManager();
 
-let pulse = parseInt(SEC_PER_PULSE, 10) * 1000
-if (Number.isNaN(pulse) || pulse < 10000) pulse = 25000 
+let pulse = parseInt(SEC_PER_PULSE, 10) * 1000;
+if (Number.isNaN(pulse) || pulse < 10000) pulse = 25000;
 // 10 seconds is min user can set
 // if blank or less than 10s, reset to 25s
-
-const HEADERS = {
-  'Content-Type': 'text/event-stream',
-  'Connection': 'keep-alive',
-  'Cache-Control': 'no-cache',
-};
 
 const redisSubscriber = redis.createClient(REDIS_PORT, REDIS_HOST);
 
@@ -33,88 +31,51 @@ redisSubscriber.on('connect', () => {
 
 redisSubscriber.on('message', (channel, message) => {
   const data = JSON.parse(message);
-  console.log(`${timestamp()} --> from Redis ${channel}: ${message}`)
-  sendNewDataToAllClients(data.topic, message);
-  if (data.topic !== 'all') sendNewDataToAllClients('all', message);
+  console.log(`${new Date()} --> from redis: ${message}`);
+  clients.sendNewDataToAll(data.topic, `data: ${message}\n\n`);
+  if (data.topic !== 'all') clients.sendNewDataToAll('all', `data: ${message}\n\n`);
 });
 
-function registrationHandler(req, res, next) {
-  const {topic, id} = req.params
+function registrationHandler(req, res) {
+  let newReg = new Registration(req);
+  let notify = new NotificationHandler(res);
 
-  const header = req.header('Authorization');
-  if (!topic || !id || !header) {
-    res.status(400).send({code: 400, status: 'Missing some registration parameters'});
-    return
-  }
-
-  const [type, token] = header.split(' ');
-  if (type !== 'Bearer' || typeof token !== 'string') {
-    res.status(401).send({code: 400, status: 'Invalid JWT header authentication syntax'});
-    return
-  }
-
-  try {
-    jwt.verify(token, JWT_KEY);
-    const newClient = {id, token} 
-    if (!clients[topic]) clients[topic] = []
-    clients[topic].push(newClient);
-    res.status(200).send({code: 200, status: "registered"});
-  } catch {
-    res.status(403).send({code: 403, status: 'Invalid or expired token.'});
-  }
-}
-
-function httpStreamHandler(req, res, next) {
-  const {topic, id, token} = req.params
-  let client
-  if (clients[topic]) client = clients[topic].find(c => c.token === token && c.id === id)
-  if (client) {
-    connectClient(topic, client, req, res)
+  if (newReg.isValid()) {
+    try {
+      newReg.verifyJWT(JWT_KEY);
+      const newClient = new Client(newReg.id, newReg.token, res);
+      clients.addClient(newClient, newReg.topic);
+      notify.clientRegistered();
+    } catch {
+      notify.invalidToken();
+    }
   } else {
-    res.status(400).send({code: 400, status: "Client must first register and pass JWT authentication"})
-  } 
+    newReg.validParams ? notify.invalidHeaders() : notify.invalidParams();
+  }
 }
 
-function connectClient(topic, client, req, res) {
-  res.writeHead(200, HEADERS);
-  client.res = res;
-  console.log(`${timestamp()} ${client.id} connected to: ${topic}`)
-  reportOnAllClients()
-  req.on('close', () => {
-    clients[topic] = clients[topic].filter(c => c.id !== client.id)
-    console.log(`${timestamp()} ${client.id} disconnected from: ${topic}`)
-    reportOnAllClients()
-  });
-}
+function httpStreamHandler(req, res) {
+  const {topic, id, token} = req.params;
+  let notify = new NotificationHandler(res);
 
-function sendNewDataToAllClients(topic, newData) {
-  if (!clients[topic]) clients[topic] = [];
-  clients[topic].forEach(c => c.res.write(`data: ${newData}\n\n`));
-}
+  let client = clients.locateClient(topic, token, id);
 
-function reportOnAllClients() {
-  let totalConnections = 0
-  const topicsSummary = Object.getOwnPropertyNames(clients).map(topic => {
-    totalConnections += clients[topic].length
-    return ('(' + clients[topic].length + ') ' + topic)
-  })
-  console.log(`${totalConnections} total clients: ${topicsSummary.join(', ')}`)
+  if (client) {
+    clients.connectClient(topic, client, res)
+    clients.reportOnAll();
+
+    req.on('close', () => {
+      clients.disconnectClient(client, topic);
+      clients.reportOnAll();
+    })
+  } else {
+    notify.clientNotRegistered()
+  }
 }
 
 // sending a heartbeat/pulse is necessary to regularly check on health of all connections
-function pulseToAllClients() {
-  const topics = Object.getOwnPropertyNames(clients)
-  topics.forEach(t => {
-    clients[t].forEach(c => c.res.write(`:\n\n`))
-  })
-}
-
-//regularly send pulse to check connection
-setInterval(pulseToAllClients, pulse)
-
-function timestamp(){
-  return new Date()
-};
+// regularly send pulse to check connection
+setInterval(clients.pulseToAll.bind(clients), pulse);
 
 //routes
 
