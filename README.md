@@ -11,8 +11,9 @@ The Redis pub-sub itself receives messages from the [Fjord Consumer](https://git
 
 ## Docker location
 
-- v1: `https://hub.docker.com/r/sophiecodes/server`
-- v0: `https://hub.docker.com/r/dockervahid/fjord-server`
+- v2: https://hub.docker.com/r/sophiecodes/server_v1
+- v1: https://hub.docker.com/r/sophiecodes/server
+- v0: https://hub.docker.com/r/dockervahid/fjord-server
 
 ## How to use Fjord Server
 
@@ -43,23 +44,6 @@ if (!topic) topic = "all";
 host = host.length ? "http://" + host : "http://localhost:3000";
 
 const id = ""; // userId
-
-registerAndStream();
-
-function registerAndStream() {
-  fetch(`${host}/register/${topic}/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    method: 'GET'
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.code === 200) stream();
-    console.log(data);
-  })
-  .catch(err => console.log(err));
-}
 
 function stream() {
   const URL = `${host}/stream/${topic}`;

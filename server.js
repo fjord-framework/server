@@ -36,40 +36,49 @@ redisSubscriber.on('message', (channel, message) => {
   if (data.topic !== 'all') clients.sendNewDataToAll('all', `data: ${message}\n\n`);
 });
 
-function registrationHandler(req, res) {
-  let newReg = new Registration(req);
+function verifyAndRegisterUser(topic, id, token, res) {
+  let newReg = new Registration(topic, id, token);
   let notify = new NotificationHandler(res);
 
-  if (newReg.isValid()) {
+  if (newReg.hasValidTopic()) {
     try {
       newReg.verifyJWT(JWT_KEY);
-      const newClient = new Client(newReg.id, newReg.token, res);
-      clients.addClient(newClient, newReg.topic);
-      notify.clientRegistered();
+      console.log('verified')
+      return newReg.id;
     } catch {
-      notify.invalidToken();
+      console.log('invalid token', token)
+      // notify.invalidToken();
     }
   } else {
-    newReg.validParams ? notify.invalidHeaders() : notify.invalidParams();
+    console.log('invalid topic')
+    // notify.invalidTopic();
+    return false;
+
   }
+  return false;
 }
 
-function httpStreamHandler(req, res) {
+function httpStreamHandler(req, res, next) {
   const {topic, id, token} = req.params;
   let notify = new NotificationHandler(res);
 
-  let client = clients.locateClient(topic, token, id);
+  let registrationId = verifyAndRegisterUser(topic, id, token, notify);
+  console.log(registrationId)
+  if (registrationId) {
+    const newClient = new Client(registrationId, token);
+    clients.connectClient(newClient, topic, res);
+    // notify.clientConnected(); 
 
-  if (client) {
-    clients.connectClient(topic, client, res)
+    console.log('connected')
     clients.reportOnAll();
 
     req.on('close', () => {
-      clients.disconnectClient(client, topic);
+      clients.disconnectClient(newClient, topic);
       clients.reportOnAll();
     })
   } else {
-    notify.clientNotRegistered()
+    console.log('not connected')
+    // notify.clientNotConnected()
   }
 }
 
@@ -78,8 +87,6 @@ function httpStreamHandler(req, res) {
 setInterval(clients.pulseToAll.bind(clients), pulse);
 
 //routes
-
-app.get('/register/:topic/:id', registrationHandler)
 
 app.get('/stream/:topic/:id/:token', httpStreamHandler);
 
