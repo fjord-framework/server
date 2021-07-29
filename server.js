@@ -7,8 +7,6 @@ const Publisher = require('./lib/publisher');
 
 const app = express();
 app.use(cors());
-// app.use(express.json());
-// app.use(express.urlencoded({extended: false}));
 
 const {PORT, REDIS_PORT, REDIS_HOST, JWT_KEY, SEC_PER_PULSE, API_TOPICS} = process.env;
 
