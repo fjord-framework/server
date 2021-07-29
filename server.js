@@ -16,7 +16,7 @@ publisher.listenAndPublish();
 
 app.get('/stream/:topic/:id/:token', clients.stream.bind(clients));
 
-// for ALB health check
+// for AWS Application Load Balancer health check
 app.get('/', (req, res) => res.send('Healthy'));
 
 app.listen(PORT, () => console.log(`listening on port: ${PORT}`));
