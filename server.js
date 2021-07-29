@@ -43,42 +43,33 @@ function verifyAndRegisterUser(topic, id, token, res) {
   if (newReg.hasValidTopic()) {
     try {
       newReg.verifyJWT(JWT_KEY);
-      console.log('verified')
+      console.log(`Client ${id} verified.`)
       return newReg.id;
     } catch {
-      console.log('invalid token', token)
-      // notify.invalidToken();
+      console.log(`Invalid token. Client ${id} cannot be connected.`)
+      notify.invalidToken();
     }
   } else {
-    console.log('invalid topic')
-    // notify.invalidTopic();
-    return false;
-
+    console.log(`Invalid topic. Client ${id} cannot be connected.`)
+    notify.invalidTopic();
   }
   return false;
 }
 
 function httpStreamHandler(req, res, next) {
   const {topic, id, token} = req.params;
-  let notify = new NotificationHandler(res);
 
-  let registrationId = verifyAndRegisterUser(topic, id, token, notify);
-  console.log(registrationId)
+  let registrationId = verifyAndRegisterUser(topic, id, token, res);
+
   if (registrationId) {
     const newClient = new Client(registrationId, token);
     clients.connectClient(newClient, topic, res);
-    // notify.clientConnected(); 
-
-    console.log('connected')
     clients.reportOnAll();
 
     req.on('close', () => {
       clients.disconnectClient(newClient, topic);
       clients.reportOnAll();
     })
-  } else {
-    console.log('not connected')
-    // notify.clientNotConnected()
   }
 }
 
