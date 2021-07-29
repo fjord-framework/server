@@ -25,6 +25,7 @@ The following environment variables must be configured:
   - `REDIS_HOST` - e.g. localhost
   - `JWT_KEY` - the private key
   - `SEC_PER_PULSE` - e.g. 30
+  - `VALID_TOPICS` - e.g. stocks weather (topics should be space delimited)
 
 
 ### In this version
