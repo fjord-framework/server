@@ -14,7 +14,13 @@ const clients = new ClientsManager(JWT_KEY, API_TOPICS);
 const publisher = new Publisher(REDIS_PORT, REDIS_HOST, SEC_PER_PULSE, clients.list);
 publisher.listenAndPublish();
 
-app.get('/stream/:topic/:id/:token', clients.stream.bind(clients));
+if (JWT_KEY) {
+  // server set up to require JWT
+  app.get('/stream/:topic/:id/:token', clients.stream.bind(clients));
+} else {
+  // server set up without JWT
+  app.get('/stream/:topic/:id', clients.stream.bind(clients));
+}
 
 // for AWS Application Load Balancer health check
 app.get('/', (req, res) => res.send('Healthy'));
