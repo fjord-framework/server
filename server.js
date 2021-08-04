@@ -8,10 +8,24 @@ const Publisher = require('./lib/publisher');
 const app = express();
 app.use(cors());
 
-const {PORT, REDIS_PORT, REDIS_HOST, JWT_KEY, SEC_PER_PULSE, API_TOPICS} = process.env;
+const {
+  PORT,
+  REDIS_PORT,
+  REDIS_HOST,
+  JWT_KEY,
+  SEC_PER_PULSE,
+  API_TOPICS
+} = process.env;
 
 const clients = new ClientsManager(JWT_KEY, API_TOPICS);
-const publisher = new Publisher(REDIS_PORT, REDIS_HOST, SEC_PER_PULSE, clients.list);
+
+const publisher = new Publisher(
+  REDIS_PORT,
+  REDIS_HOST,
+  SEC_PER_PULSE,
+  clients.list
+);
+
 publisher.listenAndPublish();
 
 if (JWT_KEY) {
