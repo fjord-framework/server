@@ -30,21 +30,23 @@ describe('ClientsManager instantiation', () => {
   });
 });
 
-test('validateRequest works with invalid inputs', () => {
-  expect(clients.validateRequest({})).toMatchObject({valid: false, code: 406, error: 'Invalid topic'});
-});
+describe('ClientsManager helper methods function properly', () => {
+  test('validateRequest works with invalid inputs', () => {
+    expect(clients.validateRequest({})).toMatchObject({valid: false, code: 406, error: 'Invalid topic'});
+  });
 
-test('validateRequest works with valid topic', () => {
-  const ClientsWithoutToken = new ClientsManager(false, 'test');
-  expect(ClientsWithoutToken.validateRequest({topic: 'test'})).toMatchObject({valid: true});
-});
+  test('validateRequest works with valid topic', () => {
+    const ClientsWithoutToken = new ClientsManager(false, 'test');
+    expect(ClientsWithoutToken.validateRequest({topic: 'test'})).toMatchObject({valid: true});
+  });
 
-test('addClient adds client object to list associated with topic when client has short id', () => {
-  clients.addClient('test', '111');
-  expect(clients.list.test).toMatchObject(clients.list['test']);
-});
+  test('addClient adds client object to list associated with topic when client has short id', () => {
+    clients.addClient('test', '111');
+    expect(clients.list.test).toMatchObject(clients.list['test']);
+  });
 
-test('addClient adds client object to list associated with topic when client has no id', () => {
-  clients.addClient('test');
-  expect(clients.list.test).toMatchObject(clients.list['test']);
+  test('addClient adds client object to list associated with topic when client has no id', () => {
+    clients.addClient('test');
+    expect(clients.list.test).toMatchObject(clients.list['test']);
+  });
 });
