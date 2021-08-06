@@ -6,4 +6,4 @@ This is the API Proxy Server that subscribes to a Redis pub-sub on AWS, and repu
 
 ## Docker locations
 
-https://hub.docker.com/r/dockervahid/fjord-server
+https://hub.docker.com/r/fjordframework/server
