@@ -10,7 +10,7 @@ The Fjord Server is a web server that subscribes to a Redis channel and publishe
 
 ## How is the Fjord Server Deployed?
 
-It's possible to run the Fjord server locally. However, the dockerized server is generally intended to be deployed with the entire Fjord infrastructure on AWS, which can be done without using any code in this repo. If you'd like to deploy the entire Fjord infrastructure, please see the [deploy](https://github.com/fjord-framework/deploy) repo. If you wish to test the Fjord server locally, please continue reading below.
+It's possible to run the Fjord server locally. However, the dockerized server is generally intended to be deployed with the entire Fjord infrastructure on AWS, which can be done without using any code in this repo. If you'd like to deploy the entire Fjord infrastructure, please see the [cli repo](https://github.com/fjord-framework/cli) repo. If you wish to test the Fjord server locally, please continue reading below.
 
 ## How is the Fjord Server Run Locally?
 
