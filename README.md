@@ -49,6 +49,6 @@ connected to redis on port 6379
 
 Congratulations! Your Fjord server is now running locally and is able to connect to Redis. A good next step to continue with Fjord locally is to set up a Kafka cluster and run the Fjord consumer. Please see the [consumer](https://github.com/fjord-framework/consumer) repo.
 
-## Docker locations
+## Docker Image
 
 https://hub.docker.com/r/fjordframework/server
